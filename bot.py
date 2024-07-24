@@ -11,6 +11,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 BotMaestroSDK.RAISE_NOT_CONNECTED = False
 
 import pandas as pd
+import os
 
 #Email
 import win32com.client as win32
@@ -73,6 +74,17 @@ class Bot(WebBot):
         # Implement here your logic...
         
         try:
+            #Alerta para inicio da automação
+            maestro.alert(
+                task_id=execution.task_id,
+                title="Extrair_Moedas - Inicio",
+                message="Estamos iniciando o processo",
+                alert_type=AlertType.INFO
+            )
+            
+            #Caminho da pasta
+            pasta = r'C:\Users\55929\Desktop\Curso de Python\RPA\extrair_moedas'
+            
             #Procuro a moeda dolar
             self.search_coin('Dolar Hoje')
             self.wait(1000)
@@ -88,35 +100,48 @@ class Bot(WebBot):
             data = {'Moedas': ['Dolar', 'Euro'], 'Valor': [dolar, euro]}
             df = pd.DataFrame(data)
 
-            
             #Salvando os dados na planilha do excel
             df.to_excel('moedas.xlsx',index=False)
+            
+            #Juntar o caminho da pasta com o arquivo excel
+            file_xlsx = os.path.join(pasta, 'moedas.xlsx')
 
+            #Aguarda 2s
             self.wait(2000)
+            
             #Enviando e-mail
-            self.send_email('matheuspinheiro0597@gmail.com', r'D:\rpa\Curso de RPA\extrair_dolar\moedas.xlsx')
+            self.send_email('matheuspinheiro0597@gmail.com', file_xlsx)
             
-
-
-            
+ 
         except Exception as ex:
-            print(ex)
+            #Print da tela se que deu erro
+            self.save_screenshot(self)
+            
+            #Mensagem de erro
+            maestro.error(
+                task_id=execution.task_id,
+                exception=ex,
+                screenshot="erro.png"
+            )
+            
+            #Status da tarefa
+            status = AutomationTaskFinishStatus.FAILED
+            message = "Tarefa extrair moedas finalizada com falha"
 
         finally:
 
             # Wait 3 seconds before closing
             self.wait(3000)
-            # Finish and clean up the Web Browser
-            # You MUST invoke the stop_browser to avoid
-            # leaving instances of the webdriver open
+
+            #Encerrar o Browser
             self.stop_browser()
 
-        # Uncomment to mark this task as finished on BotMaestro
-        maestro.finish_task(
-            task_id=execution.task_id,
-            status=AutomationTaskFinishStatus.SUCCESS,
-            message="Task Finished OK."
-        )
+            # Uncomment to mark this task as finished on BotMaestro
+            maestro.finish_task(
+                task_id=execution.task_id,
+                status=AutomationTaskFinishStatus.SUCCESS,
+                message="Tarefa finalizada OK."
+            )
 
 
     def not_found(self, label):
