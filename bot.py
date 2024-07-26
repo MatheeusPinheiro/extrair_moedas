@@ -26,7 +26,7 @@ class Bot(WebBot):
         self.enter()
 
     def extract_coin(self):
-        coin = self.find_element('//*[@id="knowledge-currency__updatable-data-column"]/div[1]/div[2]/span[1]', By.XPATH).text
+        coin = self.find_element('pclqee', By.CLASS_NAME).text
         return coin
     
     def send_email(self, email_to, file_path):
@@ -81,23 +81,27 @@ class Bot(WebBot):
                 message="Estamos iniciando o processo",
                 alert_type=AlertType.INFO
             )
+
+            #Parametros vindo do orquestrador
+            coin1 = execution.parameters.get("moeda")
+            coin2 = execution.parameters.get("moeda2")
             
             #Caminho da pasta
-            pasta = r'C:\Users\55929\Desktop\Curso de Python\RPA\extrair_moedas'
+            pasta = os.getcwd()
             
             #Procuro a moeda dolar
-            self.search_coin('Dolar Hoje')
+            self.search_coin(coin1)
             self.wait(1000)
             dolar =  self.extract_coin()
 
             #Procuro a moeda euro
             self.wait(1000)
-            self.search_coin('Euro Hoje')
+            self.search_coin(coin2)
             self.wait(1000)
             euro =  self.extract_coin()
 
             #Criando um dataframe no pandas
-            data = {'Moedas': ['Dolar', 'Euro'], 'Valor': [dolar, euro]}
+            data = {'Moedas': [coin1, coin2], 'Valor': [dolar, euro]}
             df = pd.DataFrame(data)
 
             #Salvando os dados na planilha do excel
@@ -107,7 +111,7 @@ class Bot(WebBot):
             file_xlsx = os.path.join(pasta, 'moedas.xlsx')
 
             #Aguarda 2s
-            self.wait(2000)
+            self.wait(3000)
             
             #Enviando e-mail
             self.send_email('matheuspinheiro0597@gmail.com', file_xlsx)
@@ -115,7 +119,7 @@ class Bot(WebBot):
  
         except Exception as ex:
             #Print da tela se que deu erro
-            self.save_screenshot(self)
+            self.save_screenshot('erro.png')
             
             #Mensagem de erro
             maestro.error(
